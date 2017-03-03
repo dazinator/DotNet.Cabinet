@@ -6,8 +6,9 @@ IFileProviders to integrate read access to file from any source (such as google 
 
 ## Getting started
 
-Create a storage. This defines where files will be physically written too.
-In this case, files will be written to `C:/Foo/43bf6778-ff16-41c8-a72c-cd319d84b8bb/`:
+Create a `IFileStorageProvider`. This provides the write operations for the virtual directory / cabinet. I currently provide only one impmentation of this, which is `PhysicalFileStorageProvider`.
+
+In the following case, files will be physically written to `C:/Foo/43bf6778-ff16-41c8-a72c-cd319d84b8bb/`:
 
 ```
             var partitionId = Guid.NewGuid();
@@ -15,7 +16,8 @@ In this case, files will be written to `C:/Foo/43bf6778-ff16-41c8-a72c-cd319d84b
 
 ```
 
-Next, create a cabinet that uses that storage provider.
+Next, create a cabinet. This represents the virtual file system. It uses the storage provider we just created so that users can 
+Add / Update / Delete files within the Virtual File System. Because we are using Physical storage, this will result in the relevent System.IO operations on disk.
 
 ```
 
@@ -24,8 +26,8 @@ var cabinet = new Cabinet(cabinetStorage);
 ```
 
 Now, you can create / update and delete files from the cabinet.
-To create files, you can pass in any `IFileInfo` which supplies the file name and content information.
-For example, StringFileInfo let's you create a file by directly supplying it's string content:
+To create files, you can pass in any `IFileInfo` which supplies the file name and file content.
+For example, `StringFileInfo` let's you create a file by directly supplying it's string content:
 
 
 ```
@@ -38,9 +40,9 @@ There are also:
 
  - EmbeddedFileInfo
  - MemoryStreamFileInfo
- - WrappedFileInfo
+ - WrappedFileInfo (Let's you wrap an existing IFileInfo from elsewhere, but override it's file name or other detail)
 
-As we are using physical storage, with a partion id that is a GUID, the resulting file in the above example, will be placed physically here:
+As we are using a physical storage provider for this cabinet, with a partion id that is a GUID, the resulting file in the above example, will be placed physically here:
 
 `C:/Foo/43bf6778-ff16-41c8-a72c-cd319d84b8bb/foo/bar/baz.txt`
 
@@ -55,6 +57,8 @@ In terms of reading the file, the file is exposed via an `IFileProvider`like so:
 
 ```
 
+Notice, the consumer of the cabinet doesn't care about where the file physically lives - they only care about its subpath / request path.
+
 You may be wondering what the benefit of this is?
 
 ## Including files from additional sources
@@ -67,9 +71,8 @@ var cabinet = new Cabinet(cabinetStorage, additionalVirtualFilesProvider);
 
 ```
 
-Now, when you are using the cabinet, it will have read access to any files provided by the additional `IFileProvider,
-those files will be unified with the files from the `cabinetStorage` (in this case a `PhysicalFileStorageProvider`) and
-that constitues the virtual directory for the cabinet.
+Now, when you are using this cabinet, it's virtual directory will allow you to access any files provided by the additional `IFileProvider` that we passed in, in this case `GoogleDrive` and `OneDrive` - and thats in addition to the files that are already provided from the underlying Storare provider (in this case a `PhysicalFileStorageProvider`) and
+that constitues the complete virtual directory for the cabinet.
 
 ## Hooking up with ASP.NET static files
 
@@ -77,6 +80,8 @@ The cabinet exposes it's `IFileProvider` and you can easily hook this into `IHos
 You could also hook it into static files middleware options.
 
 ## Isolation
+
+The real benefit starts to show when we want to Write files, and use isolation.
 
 Let's say you are building a modular system, where you want:
 
@@ -108,11 +113,13 @@ You can achieve this with cabinet by:
 Now, module A can create a file called "/foo.txt" using the `moduleACabinet`.
 Module B can create a file also called "/foo.txt" using the `moduleBCabinet`
 
-The system cabinet might already have a file "/foo.txt"
+Each module is accessing files in isolation, means conflicts wont occur.
+
+The system cabinet might already have a file "/foo.txt" also.
 
 There will be no clashes, because, each seperate cabinet has isolated file storage.
 
-Let's say that Module A also needs read access to the system files.
+Let's say that Module A also needs read access to system level files.
 
 ```
             
@@ -120,8 +127,9 @@ Let's say that Module A also needs read access to the system files.
 
 ```
 
-Now, let's say the system file cabinet has a file called "/foo.txt". 
-Let's say Module A, doesn't like the look of it.
+Now, Module A's cabinet has files provided by the system cabinet, in it's virtual directory.
+
+Now, let's say the system file cabinet has a file called "/foo.txt", and let's say Module A, sees the file "/foo.txt" in it't virtual directory, and doesn't like the look of it.
 
 Module A can create it's own version of the "/foo.txt" file without effecting the system version. 
 
@@ -131,8 +139,19 @@ Module A can create it's own version of the "/foo.txt" file without effecting th
 
 ```
 
-Now when module A requests "/foo.txt" via its cabinet, it will get back it's own version (from its partition) rather than the system
-level version from the system cabinet.
+This is because, behind the scenes, the system file physcally lives at:
+
+```
+`C:/Foo/43bf6778-ff16-41c8-a72c-cd319d84b8bb/foo.txt`
+```
+
+Where as the physical storage provider for ModuleA creates the file at:
+
+```
+`C:/Foo/cbf0c93a-8840-46ba-921c-b85e81265c81/foo.txt`
+```
+
+So now, when module A requests "/foo.txt" via its cabinet, it will get back it's own version of the file, as it's own IFileProvider takes precedence, over other IFileProviders that are part of its virtual directory (in this case the IFileProvider from the system files cabinet.)
 
 
 
