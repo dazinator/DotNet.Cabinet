@@ -25,8 +25,6 @@ var cabinet = new Cabinet(cabinetStorage);
 ```
 
 Now, you can create / update and delete files from the cabinet.
-To create files, you can pass in any `IFileInfo` which supplies the file name and file content.
-For example, `StringFileInfo` let's you create a file by directly supplying it's string content:
 
 
 ```
@@ -34,6 +32,10 @@ For example, `StringFileInfo` let's you create a file by directly supplying it's
  cabinet.Storage.CreateFile(new StringFileInfo("super content", "baz.txt"), fileDir);
 
 ```
+
+To create files, you can pass in any `IFileInfo`. An `IFileInfo` is a standard microsoft abstraction for providing read only access to file information.
+
+For example, `StringFileInfo` let's you create a file by directly supplying it's string content:
 
 There are also:
 
