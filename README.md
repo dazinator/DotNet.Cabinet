@@ -16,8 +16,7 @@ In the following case, files will be physically written to `C:/Foo/43bf6778-ff16
 
 ```
 
-Next, create a cabinet. This represents the virtual file system. It uses the storage provider we just created so that users can 
-Add / Update / Delete files within the Virtual File System. Because we are using Physical storage, this will result in the relevent System.IO operations on disk.
+Next, create a cabinet. This represents the virtual file system. It uses the storage provider we just created for its own writeable storage area.
 
 ```
 
