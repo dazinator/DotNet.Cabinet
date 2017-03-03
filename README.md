@@ -184,3 +184,23 @@ Where as the physical storage provider for ModuleA will create the overriding fi
 So now, when module A requests "/foo.txt" via its cabinet, it will get back it's own version of the file.
 
 This offers a useful safety feature in that, Module A cannot delete system level files, only override them.
+
+## StorageInfo
+
+Some helpful methods are provided so that you can query total file size of cabinets.
+
+```
+            var storageInfo = cabinet.StorageInfo;
+            long size = storageInfo.CalculateUsedStorageSize();
+            var readable = StorageInfo.GetBytesReadable(size); // returns "24 B"
+```
+
+You can also query total file size, using filter patterns (using a glob pattern supported by [DotNet.Glob](https://github.com/dazinator/DotNet.Glob)) like so:
+
+```
+            var storageInfo = cabinet.StorageInfo;
+            long size = storageInfo.CalculateUsedStorageSize("**/*some?[2-5].txt");
+            var readable = StorageInfo.GetBytesReadable(size); // returns readable version of size, i.e "24 B"
+```
+
+You can pass in a combination of multiple include and exclude patterns when doing this.
