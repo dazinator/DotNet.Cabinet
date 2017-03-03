@@ -33,6 +33,12 @@ Now, you can create / update and delete files from the cabinet.
 
 ```
 
+The virtual directory of the cabinet now looks like:
+
+```
+/foo/bar/baz.txt
+```
+
 To create files, you can pass in any `IFileInfo`. An `IFileInfo` is a standard microsoft abstraction for providing read only access to file information.
 
 For example, `StringFileInfo` let's you create a file by directly supplying it's string content:
@@ -43,37 +49,44 @@ There are also:
  - MemoryStreamFileInfo
  - WrappedFileInfo (Let's you wrap an existing IFileInfo from elsewhere, but override it's file name or other detail)
 
-As we are using a physical storage provider for this cabinet, with a partion id that is a GUID, the resulting file in the above example, will be placed physically here:
+Behind the scenes, the PhysicalStorageProvider will have written it here:
 
 `C:/Foo/43bf6778-ff16-41c8-a72c-cd319d84b8bb/foo/bar/baz.txt`
 
-In terms of reading the file, the file is exposed via an `IFileProvider`like so:
+In terms of getting read access to files from the cabinets virual directory, you use the cabinets `IFileProvider` for that, like so:
 
 
 ```
 
- var existingFile = cabinet.FileProvider.EnsureFile("/foo/bar/baz.txt");
+ var existingFile = cabinet.FileProvider.EnsureFile("/foo/bar/baz.txt"); // EnsureFile is a handy extension method.
  var contents = existingFile.ReadAllContent();
  Assert.Equal(contents, "super content");
 
 ```
 
-Notice, the consumer of the cabinet doesn't care about where the file physically lives - they only care about its subpath / request path.
+Notice, the consumer of the cabinet doesn't care about where the file physically lives - it only cares about its subpath / request path within the virtual directory.
 
 You may be wondering what the benefit of this is?
 
-## Including files from additional sources
+## Including files from additional sources into the virtual directory.
 
-If you would like your cabinet to also expose files from other sources:
-
-```
-IFileProvider additionalVirtualFilesProvider  = new CompositeFileProvider(new GoogleDriveFileProvider(options), new OneDriveFileProvider(oneDriveOptions));
-var cabinet = new Cabinet(cabinetStorage, additionalVirtualFilesProvider);
+If you would like your cabinet to also include other files into its virtual directory:
 
 ```
+IFileProvider otherSourcesFileProvider  = new CompositeFileProvider(new GoogleDriveFileProvider(options), new OneDriveFileProvider(oneDriveOptions));
+var cabinet = new Cabinet(cabinetStorage, otherSourcesFileProvider);
 
-Now, when you are using this cabinet, it's virtual directory will allow you to access any files provided by the additional `IFileProvider` that we passed in, in this case `GoogleDrive` and `OneDrive` - and thats in addition to the files that are already provided from the underlying Storare provider (in this case a `PhysicalFileStorageProvider`) and
-that constitues the complete virtual directory for the cabinet.
+```
+
+Now, when you are using this cabinet, it's virtual directory will consist of the additional files provider from the `IFileProvider` that we passed in. So for example, if you have a "/foo/bar.txt" on google drive, and a "baz.txt" on onedrive, and you also used the cabinet to create a new file "/bat.txt" - then the virtual directory for the cabinet would look like this:
+
+```
+/bat.txt
+/foo/bar.txt
+/baz.txt
+```
+
+Where `bat.txt` comes from the IFileProvider that sits over the cabinets physical storage provider - i.e `C:/Foo/43bf6778-ff16-41c8-a72c-cd319d84b8bb/bat.txt`and the other files are sourced from the additional `IFileProviders` for google drive and one drive.
 
 ## Hooking up with ASP.NET static files
 
@@ -82,7 +95,7 @@ You could also hook it into static files middleware options.
 
 ## Isolation
 
-The real benefit starts to show when we want to Write files, and use isolation.
+The real benefit starts to show when we want to start using isolation.
 
 Let's say you are building a modular system, where you want:
 
@@ -113,14 +126,12 @@ You can achieve this with cabinet by:
 
 Now, module A can create a file called "/foo.txt" using the `moduleACabinet`.
 Module B can create a file also called "/foo.txt" using the `moduleBCabinet`
-
-Each module is accessing files in isolation, means conflicts wont occur.
-
 The system cabinet might already have a file "/foo.txt" also.
 
+Each module is accessing files in isolation, which means no conflicts occur.
 There will be no clashes, because, each seperate cabinet has isolated file storage.
 
-Let's say that Module A also needs read access to system level files.
+Let's say that Module A also needs read access to system level files though.
 
 ```
             
@@ -130,15 +141,33 @@ Let's say that Module A also needs read access to system level files.
 
 Now, Module A's cabinet has files provided by the system cabinet, in it's virtual directory.
 
-Now, let's say the system file cabinet has a file called "/foo.txt", and let's say Module A, sees the file "/foo.txt" in it't virtual directory, and doesn't like the look of it.
+Now, let's say the system file cabinet has a file called "/foo.txt", and let's say Module A wants to amend it.
+ 
+The virtual directory for module A would look like this:
 
-Module A can create it's own version of the "/foo.txt" file without effecting the system version. 
+```
+/foo.txt <-- comes from system cabinet IFileProvider
 
 ```
 
+Module A can create it's own version of this file, but it cannot modify the system version, unless it accesses the file using the system cabinet.
+
+So module A can create its own version like so:
+
+```
  moduleACabinet.Storage.CreateFile(new StringFileInfo("super content", "foo.txt"));
+ ```
+ 
+ Now it's vitual directory looks like this:
 
 ```
+/foo.txt <-- comes from module A's physical storage
+/foo.txt <-- comes from system cabinet IFileProvider
+
+```
+
+Because the file from module A's physical storage is higher in precedence, it essentially overrides the file thats resolvable via the 
+systems IFileProvider within the virtual directory.
 
 This is because, behind the scenes, the system file physcally lives at:
 
@@ -146,17 +175,12 @@ This is because, behind the scenes, the system file physcally lives at:
 `C:/Foo/43bf6778-ff16-41c8-a72c-cd319d84b8bb/foo.txt`
 ```
 
-Where as the physical storage provider for ModuleA creates the file at:
+Where as the physical storage provider for ModuleA will create the overriding file here:
 
 ```
 `C:/Foo/cbf0c93a-8840-46ba-921c-b85e81265c81/foo.txt`
 ```
 
-So now, when module A requests "/foo.txt" via its cabinet, it will get back it's own version of the file, as it's own IFileProvider takes precedence, over other IFileProviders that are part of its virtual directory (in this case the IFileProvider from the system files cabinet.)
+So now, when module A requests "/foo.txt" via its cabinet, it will get back it's own version of the file.
 
-
-
-
-
-
-
+This offers a useful safety feature in that, Module A cannot delete system level files, only override them.
