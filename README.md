@@ -2,7 +2,7 @@
 Cabinet, is a virtual file system API for netstandard platforms, that allows you to create file systems, with optional isolation.
 
 It uses `Microsoft.Extensions.FileProviders.IFileProvider`s for read access to the virutal directory - so you can implement your own 
-IFileProviders to integrate read access to file from any source (such as google drive, one drive, etc)
+IFileProviders to integrate read access to file from any source (such as google drive, one drive, etc). I have some additional IFileProvider implementations here that you can also use: https://github.com/dazinator/Dazinator.AspNet.Extensions.FileProviders
 
 ## Getting started
 
