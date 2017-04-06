@@ -1,14 +1,25 @@
 # DotNet.Cabinet
-Cabinet, is a virtual file system API for netstandard platforms, that allows you to create file systems, with optional isolation.
+Cabinet, is a netstandard library (for dotnet applications) that provides a layered, virtual directory. It provides a virtual directory, in which files can come agnostically from a composite of different sources (anything you can write an `IFileProvider` for, i.e Physical folders, Google Drive, OneDrive etc). These sources (`IFileProvider`s) are layered, so that for example, a file `/foo.txt` that exists in one source, can override the file `/foo.txt` from another source.
 
-It uses `Microsoft.Extensions.FileProviders.IFileProvider`s for read access to the virutal directory - so you can implement your own 
-IFileProviders to integrate read access to file from any source (such as google drive, one drive, etc). I have some additional IFileProvider implementations here that you can also use: https://github.com/dazinator/Dazinator.AspNet.Extensions.FileProviders
+The concept of allowing files placed in one location, to override files from another, is a technique often used by Static Site Generators - i.e you might have a `/system/themes` and a `/user/themes` directory, where files placed in the user directory should override any system level files.
 
-## Getting started
+For example, you can use `Cabinet` to build a layered virtual directory, consisting of the physical location `C:/User` as a source for the first layer, then `C:/System` as a source for the second layer, and perhaps GoogleDrive as a source for the third layer. Now, when getting the file `/config.json` from the Cabinet, it will actually attempt to resolve the file first, from `C:/User` then from `C:/System` and then lastly it would fall back to `Google Drive`.
 
-Create a `IFileStorageProvider`. This provides the write operations for the virtual directory / cabinet. I currently provide only one impmentation of this, which is `PhysicalFileStorageProvider`.
+Cabinet uses `Microsoft.Extensions.FileProviders.IFileProvider`s as the abstraction for read access to all these sources - so you can implement your own 
+`IFileProvider`s to integrate read access to files from any source (such as google drive, one drive, etc). I have some additional `IFileProvider` implementations here that you might also like to use, such as an InMemory provider: https://github.com/dazinator/Dazinator.AspNet.Extensions.FileProviders
 
-In the following case, files will be physically written to `C:/Foo/43bf6778-ff16-41c8-a72c-cd319d84b8bb/`:
+## Before Getting started
+
+Cabinet does not just provide a virtual directory as a read only view of files from various sources. You can also modify these files, within the virual directory, or add new files to the virtual directory - without effecting the files that are in the underlying / original sources. The important point here, is that you can modify files and create files in the virtual directory *even where they have originated from readonly sources*. For example the virtual directory might include files from `GoogleDrive` and `OneDrive` (via relevent `IFileProvider` implementations). However, when you modify these files in the virtual directory, or add new files, those changes will not impact the original files in those sources (i.e the files in GoogleDrive, OneDrive will stay the same). Behind the scenes this works because there is a "top level" source that is included in the Cabinet / virtual directory, and to which, new or modified files are written to, and resolved from with a higher precedence.
+
+For example, if your Cabinet / virtual directory has an `IFileProvider` exposing files from onedrive, then when you were to modify this file in the virtual directory, then this will actually create a copy of the file, which will be resolved with a higher precedence than the original. The 
+
+
+## Getting Started
+
+Firstly, you need to create an `IFileStorageProvider`. This provides a writeable area for the virtual directory, for which any new files, or modifications will be persisted too, effectively overiding the original files from the original source.
+
+In the following case, file changes will be written to `C:/Foo/43bf6778-ff16-41c8-a72c-cd319d84b8bb/`:
 
 ```
             var partitionId = Guid.NewGuid();
@@ -16,13 +27,14 @@ In the following case, files will be physically written to `C:/Foo/43bf6778-ff16
 
 ```
 
-Next, create a cabinet. This represents the virtual file system. It uses the storage provider we just created for its own writeable storage area.
+Next, create the cabinet. This represents the virtual directory itself. 
 
 ```
 
 var cabinet = new Cabinet(cabinetStorage);
 
 ```
+
 
 Now, you can create / update and delete files from the cabinet.
 
@@ -39,21 +51,23 @@ The virtual directory of the cabinet now looks like:
 /foo/bar/baz.txt
 ```
 
-To create files, you can pass in any `IFileInfo`. An `IFileInfo` is a standard microsoft abstraction for providing read only access to file information.
+Note: To create files, you can pass in any `IFileInfo`.
 
-For example, `StringFileInfo` let's you create a file by directly supplying it's string content:
+For example, `StringFileInfo` let's you supply the file data as a string.
 
 There are also:
 
- - EmbeddedFileInfo
- - MemoryStreamFileInfo
+ - EmbeddedFileInfo (Let's you provided file data from an embedded resource)
+ - MemoryStreamFileInfo (Let's you provide the file data from a MemoryStream)
  - WrappedFileInfo (Let's you wrap an existing IFileInfo from elsewhere, but override it's file name or other detail)
 
-Behind the scenes, the PhysicalStorageProvider will have written it here:
+Behind the scenes, the Cabinet's `PhysicalStorageProvider` will have written it here:
 
 `C:/Foo/43bf6778-ff16-41c8-a72c-cd319d84b8bb/foo/bar/baz.txt`
 
-In terms of getting read access to files from the cabinets virual directory, you use the cabinets `IFileProvider` for that, like so:
+### Reading a File
+
+In terms of reading a file from the virtual directory, you use the cabinets `IFileProvider`, like so:
 
 
 ```
@@ -64,13 +78,11 @@ In terms of getting read access to files from the cabinets virual directory, you
 
 ```
 
-Notice, the consumer of the cabinet doesn't care about where the file physically lives - it only cares about its subpath / request path within the virtual directory.
-
-You may be wondering what the benefit of this is?
+Notice, the consumer of the cabinet doesn't care about where the files are physically sourced from - it only cares about its path within the virtual directory.
 
 ## Including files from additional sources into the virtual directory.
 
-If you would like your cabinet to also include other files into its virtual directory:
+If you would like your cabinet to include files from other sources, in its virtual directory:
 
 ```
 IFileProvider otherSourcesFileProvider  = new CompositeFileProvider(new GoogleDriveFileProvider(options), new OneDriveFileProvider(oneDriveOptions));
