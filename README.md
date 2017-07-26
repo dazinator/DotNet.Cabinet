@@ -12,7 +12,7 @@ Cabinet uses `Microsoft.Extensions.FileProviders.IFileProvider`s as the abstract
 
 Cabinet does not just provide a virtual directory as a read only view of files from various sources. You can also modify these files, within the virual directory, or add new files to the virtual directory - without effecting the files that are in the underlying / original sources. The important point here, is that you can modify files and create files in the virtual directory *even where they have originated from readonly sources*. For example the virtual directory might include files from `GoogleDrive` and `OneDrive` (via relevent `IFileProvider` implementations). However, when you modify these files in the virtual directory, or add new files, those changes will not impact the original files in those sources (i.e the files in GoogleDrive, OneDrive will stay the same). Behind the scenes this works because there is a "top level" source that is included in the Cabinet / virtual directory, and to which, new or modified files are written to, and resolved from with a higher precedence.
 
-For example, if your Cabinet / virtual directory has an `IFileProvider` exposing files from onedrive, then when you were to modify this file in the virtual directory, then this will actually create a copy of the file, which will be resolved with a higher precedence than the original. The 
+For example, if your Cabinet / virtual directory has an `IFileProvider` exposing files from onedrive, then when you were to modify this file in the virtual directory, then this will actually create a copy of the file, which will be resolved with a higher precedence than the original.
 
 
 ## Getting Started
