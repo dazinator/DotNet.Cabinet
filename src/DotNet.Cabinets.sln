@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{84F1374D-7287-4EE7-AC90-9D4458DAB2DE}"
+	ProjectSection(SolutionItems) = preProject
+		..\appveyor.yml = ..\appveyor.yml
+		..\LICENSE = ..\LICENSE
+		..\README.md = ..\README.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNet.Cabinets", "DotNet.Cabinet\DotNet.Cabinets.csproj", "{B5F27E2A-AAB7-4495-8433-4206930463CD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNet.Cabinets.Tests", "DotNet.Cabinet.Tests\DotNet.Cabinets.Tests.csproj", "{1E8C72F4-32EA-4A84-AD74-B4BEAAA3A342}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B5F27E2A-AAB7-4495-8433-4206930463CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5F27E2A-AAB7-4495-8433-4206930463CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5F27E2A-AAB7-4495-8433-4206930463CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5F27E2A-AAB7-4495-8433-4206930463CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E8C72F4-32EA-4A84-AD74-B4BEAAA3A342}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E8C72F4-32EA-4A84-AD74-B4BEAAA3A342}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E8C72F4-32EA-4A84-AD74-B4BEAAA3A342}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E8C72F4-32EA-4A84-AD74-B4BEAAA3A342}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
