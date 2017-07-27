@@ -11,7 +11,7 @@ namespace DotNet.Cabinets
             Storage = fileStorage;
             if (additionalFileProvider != null)
             {
-                FileProvider = new CompositeFileProvider(additionalFileProvider, fileStorage.FileProvider);
+                FileProvider = new CompositeFileProvider(fileStorage.FileProvider, additionalFileProvider);
             }
             else
             {
@@ -24,7 +24,7 @@ namespace DotNet.Cabinets
 
         public IFileStorageProvider Storage { get; set; }
 
-        public StorageInfo StorageInfo { get; set; }       
+        public StorageInfo StorageInfo { get; set; }
 
     }
 

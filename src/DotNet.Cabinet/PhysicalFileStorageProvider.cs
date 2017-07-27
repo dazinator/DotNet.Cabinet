@@ -37,7 +37,7 @@ namespace DotNet.Cabinets
             RootPath = cabinetPath;
             FileProvider = new PhysicalFileProvider(cabinetPath);
 
-        }
+        }     
 
         public void ReplaceFileContents(string filePath, Func<String, string> replacementFunction)
         {
@@ -49,6 +49,19 @@ namespace DotNet.Cabinets
             PathString subPath = new PathString(filePath);
             string physicalPath = GetPhysicalPath(subPath);
 
+            // Create the file if it doesn't exist.
+            if (!File.Exists(physicalPath))
+            {
+                throw new InvalidOperationException("File doesn't exist.");
+                //var newContents = replacementFunction(string.Empty);
+                //var fileName = Path.GetFileName(physicalPath);
+                //var dir = Path.GetDirectoryName(physicalPath);
+                //var newFile = new StringFileInfo(newContents, fileName);
+                //CreateFile(new StringFileInfo(newContents), dir);
+                //return;
+            }
+
+            // Overwrite existing file.
             using (FileStream fileStream = new FileStream(
                     physicalPath, FileMode.OpenOrCreate,
                     FileAccess.ReadWrite, FileShare.None))
@@ -183,7 +196,7 @@ namespace DotNet.Cabinets
 
         }
 
-     
+
 
 
     }

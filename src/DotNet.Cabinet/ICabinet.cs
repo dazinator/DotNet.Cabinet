@@ -8,5 +8,8 @@ namespace DotNet.Cabinets
         /// Provides read access to all files available to the cabinet.
         /// </summary>
         IFileProvider FileProvider { get; set; }
+
+        
+        IFileStorageProvider Storage { get; set; }
     }
 }
