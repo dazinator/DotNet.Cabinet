@@ -152,6 +152,47 @@ namespace DotNet.Cabinets.Tests
         }
 
         [Fact]
+        public void Can_Override_File()
+        {
+
+            var partitionId = Guid.NewGuid();
+
+            string currentDir = GetCurrentDir();
+
+            // system
+            var systemFilesPartionId = new Guid("43bf6778-ff16-41c8-a72c-cd319d84b8bb");
+            var systemStorage = new PhysicalFileStorageProvider(currentDir, partitionId);
+            ICabinet system = new Cabinet(systemStorage);
+
+            // create a system file /foo/bar/baz.txt
+            var fileDir = "/foo/bar/";
+            system.Storage.CreateFile(new StringFileInfo("super content", "baz.txt"), fileDir);
+
+            // Module A has access to system, and so can override system.
+            var moduleAPartitionId = new Guid("cbf0c93a-8840-46ba-921c-b85e81265c81");
+            var moduleAStorage = new PhysicalFileStorageProvider(currentDir, moduleAPartitionId);
+            ICabinet moduleA = new Cabinet(moduleAStorage, system.FileProvider);
+
+            var filePath = fileDir + "baz.txt";
+            var systemFile = moduleA.FileProvider.EnsureFile(filePath);
+            var contents = systemFile.ReadAllContent();
+            Assert.Equal(contents, "super content");
+
+            // now override it for moduleA.
+            moduleA.Storage.CreateFile(new StringFileInfo("MODULE A OVERRIDE", "baz.txt"), fileDir);
+
+            var updatedFile = moduleA.FileProvider.EnsureFile(filePath);
+            contents = updatedFile.ReadAllContent();
+            Assert.Equal(contents, "MODULE A OVERRIDE");
+
+            // make sure system module unmodified.
+            updatedFile = system.FileProvider.EnsureFile(filePath);
+            contents = updatedFile.ReadAllContent();
+            Assert.Equal(contents, "super content");
+            //var systemFile = moduleACabinet.FileProvider.GetFileInfo("/foo/bar/baz.txt");
+        }
+
+        [Fact]
         public void Cannot_OpenFile_For_Write_Whilst_Being_Read()
         {
 
