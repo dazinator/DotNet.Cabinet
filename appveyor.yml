@@ -3,8 +3,7 @@ environment:
   path_to_sln: src/DotNet.Cabinets.sln 
 skip_tags: true
 install:
-  - choco install gitversion.portable -pre -y
-  - cinst gitlink -y
+  - choco install gitversion.portable -pre -y 
 image: Visual Studio 2017 
 assembly_info:
   patch: false
@@ -15,7 +14,6 @@ build:
   project: '%path_to_sln%'
   verbosity: minimal
 after_build:
-- cmd: gitlink . -u https://github.com/%APPVEYOR_REPO_NAME% -b %APPVEYOR_REPO_BRANCH% -s %APPVEYOR_REPO_COMMIT% -f %path_to_sln%
 - cmd: msbuild %path_to_sln% /t:Pack /p:PackageVersion=%GitVersion_NuGetVersion%
 artifacts:
 - path: /src/**/*.nupkg
