@@ -97,7 +97,7 @@ namespace DotNet.Cabinets
             }
 
             PathString subPath = new PathString(dir);
-            subPath = subPath + file.Name;
+            subPath = subPath + "/" + file.Name;
 
 
             string fullPhysciaPath = GetPhysicalPath(subPath);

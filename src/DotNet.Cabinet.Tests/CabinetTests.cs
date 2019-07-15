@@ -1,4 +1,5 @@
 using Dazinator.AspNet.Extensions.FileProviders;
+using Microsoft.Extensions.FileProviders;
 using System;
 using System.IO;
 using System.Reflection;
@@ -151,8 +152,10 @@ namespace DotNet.Cabinets.Tests
 
         }
 
-        [Fact]
-        public void Can_Override_File()
+        [Theory]
+        [InlineData("/foo/bar/")]
+        [InlineData("/.testFiles")]      
+        public void Can_Override_File(string fileDir)
         {
 
             var partitionId = Guid.NewGuid();
@@ -165,7 +168,7 @@ namespace DotNet.Cabinets.Tests
             ICabinet system = new Cabinet(systemStorage);
 
             // create a system file /foo/bar/baz.txt
-            var fileDir = "/foo/bar/";
+           // var fileDir = "/foo/bar/";
             system.Storage.CreateFile(new StringFileInfo("super content", "baz.txt"), fileDir);
 
             // Module A has access to system, and so can override system.
@@ -173,7 +176,7 @@ namespace DotNet.Cabinets.Tests
             var moduleAStorage = new PhysicalFileStorageProvider(currentDir, moduleAPartitionId);
             ICabinet moduleA = new Cabinet(moduleAStorage, system.FileProvider);
 
-            var filePath = fileDir + "baz.txt";
+            var filePath = fileDir.TrimEnd('/') + '/' + "baz.txt";
             var systemFile = moduleA.FileProvider.EnsureFile(filePath);
             var contents = systemFile.ReadAllContent();
             Assert.Equal(contents, "super content");
@@ -191,6 +194,49 @@ namespace DotNet.Cabinets.Tests
             Assert.Equal(contents, "super content");
             //var systemFile = moduleACabinet.FileProvider.GetFileInfo("/foo/bar/baz.txt");
         }
+
+        //[Fact]
+        //public void Can_Override_PhysicalFileProvider_File()
+        //{
+
+        //    Guid partitionId = Guid.NewGuid();
+        //    string currentDir = GetCurrentDir();
+
+        //    PhysicalFileProvider systemFiles = new PhysicalFileProvider(currentDir);
+
+        //    // Module A has access to system, and so can override system.
+        //    Guid moduleAPartitionId = new Guid("cbf0c93a-8840-46ba-921c-b85e81265c81");
+
+        //    var dir = Path.Combine(currentDir, ".testFiles");
+        //    if(!Directory.Exists(dir))
+        //    {
+        //        System.IO.Directory.CreateDirectory(dir);
+        //    }
+          
+        //    var writer = System.IO.File.CreateText(Path.Combine(dir, "Test.txt"));
+        //    writer.Write("From Disk");
+        //    writer.Close();
+
+        //    PhysicalFileStorageProvider moduleAStorage = new PhysicalFileStorageProvider(currentDir, moduleAPartitionId);
+        //    ICabinet moduleA = new Cabinet(moduleAStorage, systemFiles);
+            
+        //    var filePath = "/.testFiles/Test.txt";
+        //    IFileInfo systemFile = moduleA.FileProvider.EnsureFile(filePath);
+        //    string contents = systemFile.ReadAllContent();
+        //    Assert.Equal(contents, "From Disk");
+
+        //    // now override it for moduleA.
+        //    moduleA.Storage.CreateFile(new StringFileInfo("MODULE A OVERRIDE", "Test.txt"), "/.testFiles");
+
+        //    IFileInfo updatedFile = moduleA.FileProvider.EnsureFile(filePath);
+        //    contents = updatedFile.ReadAllContent();
+        //    Assert.Equal(contents, "MODULE A OVERRIDE");
+
+        //    // make sure system module unmodified.
+        //    updatedFile = systemFiles.EnsureFile(filePath);
+        //    contents = updatedFile.ReadAllContent();
+        //    Assert.Equal(contents, "From Disk");
+        //}
 
         [Fact]
         public void Cannot_OpenFile_For_Write_Whilst_Being_Read()
