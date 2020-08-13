@@ -10,6 +10,8 @@ namespace DotNet.Cabinets
         IFileProvider FileProvider { get; set; }
         Guid? PartitionId { get; set; }
 
+        Task CreateFileAsync(IFileInfo file, string dir = "/");
+
         /// <summary>
         /// Creates a new file.
         /// </summary>

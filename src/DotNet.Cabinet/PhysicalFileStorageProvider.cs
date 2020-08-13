@@ -80,6 +80,48 @@ namespace DotNet.Cabinets
             }
         }
 
+        public async Task CreateFileAsync(IFileInfo file, string dir = "/")
+        {
+            if (file == null)
+            {
+                throw new ArgumentNullException("file");
+            }
+
+            if (file.IsDirectory)
+            {
+                throw new ArgumentOutOfRangeException("file");
+            }
+
+            if (string.IsNullOrWhiteSpace(dir))
+            {
+                dir = "/";
+            }
+
+            PathString subPath = new PathString(dir);
+            subPath = subPath + "/" + file.Name;
+
+            string fullPhysciaPath = GetPhysicalPath(subPath);
+            var directory = Path.GetDirectoryName(fullPhysciaPath);
+
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            using (var fileStream = File.Create(fullPhysciaPath))
+            {
+                using (var inputStream = file.CreateReadStream())
+                {
+                    if (inputStream.CanSeek)
+                    {
+                        inputStream.Seek(0, SeekOrigin.Begin);
+                    }
+                   await inputStream.CopyToAsync(fileStream);
+                }
+            }
+        }
+
+
         public void CreateFile(IFileInfo file, string dir = "/")
         {
             if (file == null)
