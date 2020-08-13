@@ -3,6 +3,7 @@ using Microsoft.Extensions.FileProviders;
 using System.IO;
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace DotNet.Cabinets
 {
@@ -181,6 +182,29 @@ namespace DotNet.Cabinets
 
         }
 
+        public async Task OpenWriteAsync(string path, Func<Stream, Task> writeAsync)
+        {
+            if (writeAsync == null)
+            {
+                throw new ArgumentNullException(nameof(writeAsync));
+            }
+
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
+            PathString subPath = new PathString(path);
+            string physicalPath = GetPhysicalPath(subPath);
+
+            using (var stream = File.OpenWrite(physicalPath))
+            {
+                await writeAsync(stream);
+            }
+
+        }
+
+
         public void DeleteFile(string filePath)
         {
             if (string.IsNullOrWhiteSpace(filePath))
@@ -195,9 +219,6 @@ namespace DotNet.Cabinets
 
 
         }
-
-
-
 
     }
 
