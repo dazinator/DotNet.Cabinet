@@ -2,7 +2,7 @@
 using Microsoft.Extensions.FileProviders;
 using System.IO;
 using Microsoft.AspNetCore.Http;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace DotNet.Cabinets
 {
@@ -79,6 +79,48 @@ namespace DotNet.Cabinets
             }
         }
 
+        public async Task CreateFileAsync(IFileInfo file, string dir = "/")
+        {
+            if (file == null)
+            {
+                throw new ArgumentNullException("file");
+            }
+
+            if (file.IsDirectory)
+            {
+                throw new ArgumentOutOfRangeException("file");
+            }
+
+            if (string.IsNullOrWhiteSpace(dir))
+            {
+                dir = "/";
+            }
+
+            PathString subPath = new PathString(dir);
+            subPath = subPath + "/" + file.Name;
+
+            string fullPhysciaPath = GetPhysicalPath(subPath);
+            var directory = Path.GetDirectoryName(fullPhysciaPath);
+
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            using (var fileStream = File.Create(fullPhysciaPath))
+            {
+                using (var inputStream = file.CreateReadStream())
+                {
+                    if (inputStream.CanSeek)
+                    {
+                        inputStream.Seek(0, SeekOrigin.Begin);
+                    }
+                   await inputStream.CopyToAsync(fileStream);
+                }
+            }
+        }
+
+
         public void CreateFile(IFileInfo file, string dir = "/")
         {
             if (file == null)
@@ -97,7 +139,7 @@ namespace DotNet.Cabinets
             }
 
             PathString subPath = new PathString(dir);
-            subPath = subPath + file.Name;
+            subPath = subPath + "/" + file.Name;
 
 
             string fullPhysciaPath = GetPhysicalPath(subPath);
@@ -181,6 +223,29 @@ namespace DotNet.Cabinets
 
         }
 
+        public async Task OpenWriteAsync(string path, Func<Stream, Task> writeAsync)
+        {
+            if (writeAsync == null)
+            {
+                throw new ArgumentNullException(nameof(writeAsync));
+            }
+
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
+            PathString subPath = new PathString(path);
+            string physicalPath = GetPhysicalPath(subPath);
+
+            using (var stream = File.OpenWrite(physicalPath))
+            {
+                await writeAsync(stream);
+            }
+
+        }
+
+
         public void DeleteFile(string filePath)
         {
             if (string.IsNullOrWhiteSpace(filePath))
@@ -195,9 +260,6 @@ namespace DotNet.Cabinets
 
 
         }
-
-
-
 
     }
 

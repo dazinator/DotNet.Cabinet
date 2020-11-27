@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.FileProviders;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace DotNet.Cabinets
 {
@@ -8,6 +9,8 @@ namespace DotNet.Cabinets
     {
         IFileProvider FileProvider { get; set; }
         Guid? PartitionId { get; set; }
+
+        Task CreateFileAsync(IFileInfo file, string dir = "/");
 
         /// <summary>
         /// Creates a new file.
@@ -22,6 +25,13 @@ namespace DotNet.Cabinets
         /// <param name="path"></param>
         /// <param name="writeAction"></param>
         void OpenWrite(string path, Action<Stream> writeAction);
+
+        /// <summary>
+        /// Opens the file stream for write access. If the same file is currently being read from then this may fail.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="writeAction"></param>
+        Task OpenWriteAsync(string path, Func<Stream, Task> writeActionAsync);
 
         /// <summary>
         /// Allows you to modify a files existing contents, whilst ensuring the file is not read or modified by anything else whilst the change is happening.

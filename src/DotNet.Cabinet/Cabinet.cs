@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.FileProviders;
-using Dazinator.AspNet.Extensions.FileProviders;
 
 namespace DotNet.Cabinets
 {
