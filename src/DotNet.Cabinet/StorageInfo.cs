@@ -1,4 +1,4 @@
-﻿using Dazinator.AspNet.Extensions.FileProviders;
+﻿using Dazinator.Extensions.FileProviders;
 using Microsoft.Extensions.FileProviders;
 using System;
 using System.Collections.Generic;

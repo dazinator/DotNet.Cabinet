@@ -1,5 +1,4 @@
-using Dazinator.AspNet.Extensions.FileProviders;
-using Microsoft.Extensions.FileProviders;
+using Dazinator.Extensions.FileProviders;
 using System;
 using System.IO;
 using System.Reflection;

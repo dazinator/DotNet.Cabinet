@@ -2,7 +2,6 @@
 using Microsoft.Extensions.FileProviders;
 using System.IO;
 using Microsoft.AspNetCore.Http;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace DotNet.Cabinets
