@@ -22,5 +22,5 @@ jobs:
     - name: Build
       run: dotnet build --no-restore src/DotNet.Cabinets.sln
     - name: Test
-      run: dotnet test src/DotNet.Cabinets.Tests.csproj --no-build --verbosity normal
+      run: dotnet test src/DotNet.Cabinets.Tests/DotNet.Cabinets.Tests.csproj --no-build --verbosity normal
     
