@@ -37,7 +37,7 @@ namespace DotNet.Cabinets
             RootPath = cabinetPath;
             FileProvider = new PhysicalFileProvider(cabinetPath);
 
-        }     
+        }
 
         public void ReplaceFileContents(string filePath, Func<String, string> replacementFunction)
         {
@@ -115,7 +115,7 @@ namespace DotNet.Cabinets
                     {
                         inputStream.Seek(0, SeekOrigin.Begin);
                     }
-                   await inputStream.CopyToAsync(fileStream);
+                    await inputStream.CopyToAsync(fileStream);
                 }
             }
         }
@@ -138,8 +138,15 @@ namespace DotNet.Cabinets
                 dir = "/";
             }
 
+            if (!dir.EndsWith("/"))
+            {
+                dir = dir + "/";
+            }
+
             PathString subPath = new PathString(dir);
-            subPath = subPath + "/" + file.Name;
+            subPath = subPath + file.Name;
+
+            //subPath = subPath + "/" + file.Name;
 
 
             string fullPhysciaPath = GetPhysicalPath(subPath);
@@ -165,12 +172,19 @@ namespace DotNet.Cabinets
 
         private static readonly char[] _trimStartChars = new char[] { '/' };
 
+        //private char slashDir = OperatingSystem.IsWindows() ? '\\' : '/' ;
         private string GetPhysicalPath(string path)
         {
-            path = path.TrimStart('/').Replace('/', '\\');
+            path = path.TrimStart('/');
+
+            if (OperatingSystem.IsWindows())
+            {
+                path = path.Replace('/', '\\');
+            }
 
             var targetPath = Path.Combine(RootPath, path);
 
+            // just in case path has "..\..\" etc we don want to allow navigation outside the root.
             bool isUnderRoot = EnsureTargetIsUnderRoot(targetPath);
             if (!isUnderRoot)
             {
@@ -185,6 +199,8 @@ namespace DotNet.Cabinets
         {
             DirectoryInfo root = new DirectoryInfo(RootPath);
             DirectoryInfo target = new DirectoryInfo(targetPath);
+
+            // we basically check the target path to make sure it contains the full base path, in way that ensures relative paths like ".." etc are resolved first.
             while (target.Parent != null)
             {
                 if (target.Parent.FullName == root.FullName)
@@ -262,7 +278,6 @@ namespace DotNet.Cabinets
         }
 
     }
-
 
 
 }

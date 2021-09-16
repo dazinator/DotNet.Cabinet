@@ -24,7 +24,7 @@ namespace DotNet.Cabinets.Tests
             // Ensure we can read the file to verify it was created.
             var existingFile = cabinet.FileProvider.EnsureFile(fileDir + "baz.txt");
             var contents = existingFile.ReadAllContent();
-            Assert.Equal(contents, "super content");
+            Assert.Equal("super content", contents);
 
         }
 
@@ -162,7 +162,7 @@ namespace DotNet.Cabinets.Tests
             string currentDir = GetCurrentDir();
 
             // system
-            var systemFilesPartionId = new Guid("43bf6778-ff16-41c8-a72c-cd319d84b8bb");
+            var systemFilesPartionId = Guid.NewGuid();
             var systemStorage = new PhysicalFileStorageProvider(currentDir, partitionId);
             ICabinet system = new Cabinet(systemStorage);
 
@@ -171,26 +171,30 @@ namespace DotNet.Cabinets.Tests
             system.Storage.CreateFile(new StringFileInfo("super content", "baz.txt"), fileDir);
 
             // Module A has access to system, and so can override system.
-            var moduleAPartitionId = new Guid("cbf0c93a-8840-46ba-921c-b85e81265c81");
+            var moduleAPartitionId = Guid.NewGuid();
             var moduleAStorage = new PhysicalFileStorageProvider(currentDir, moduleAPartitionId);
             ICabinet moduleA = new Cabinet(moduleAStorage, system.FileProvider);
 
             var filePath = fileDir.TrimEnd('/') + '/' + "baz.txt";
             var systemFile = moduleA.FileProvider.EnsureFile(filePath);
             var contents = systemFile.ReadAllContent();
-            Assert.Equal(contents, "super content");
+            Assert.Equal("super content", contents);
 
             // now override it for moduleA.
             moduleA.Storage.CreateFile(new StringFileInfo("MODULE A OVERRIDE", "baz.txt"), fileDir);
 
             var updatedFile = moduleA.FileProvider.EnsureFile(filePath);
             contents = updatedFile.ReadAllContent();
-            Assert.Equal(contents, "MODULE A OVERRIDE");
+            Assert.Equal("MODULE A OVERRIDE", contents);
 
             // make sure system module unmodified.
             updatedFile = system.FileProvider.EnsureFile(filePath);
             contents = updatedFile.ReadAllContent();
-            Assert.Equal(contents, "super content");
+            Assert.Equal("super content", contents);
+
+            // clean up.
+            moduleA.Storage.DeleteFile(Path.Combine(fileDir, "baz.txt"));
+            system.Storage.DeleteFile(Path.Combine(fileDir, "baz.txt"));
             //var systemFile = moduleACabinet.FileProvider.GetFileInfo("/foo/bar/baz.txt");
         }
 

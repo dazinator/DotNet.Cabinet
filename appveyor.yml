@@ -1,20 +1,25 @@
-  # environment variables
 environment:
-  path_to_sln: src/DotNet.Cabinets.sln 
+  path_to_sln: src/DotNet.Cabinets.sln
 skip_tags: true
+image: Visual Studio 2019
+#assembly_info:
+#  patch: false
 install:
-  - choco install gitversion.portable -pre -y 
-image: Visual Studio 2017 
-assembly_info:
-  patch: false
+  - cmd: choco install gitversion.portable -pre -y
+  #- ps: iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/appveyor/secure-file/master/install.ps1'))
+  #- cmd: appveyor-tools\secure-file -decrypt dazinator.snk.enc -secret %signingkey%
+
 before_build:
-- ps: gitversion /l console /output buildserver
-- cmd: msbuild %path_to_sln% /t:restore /p:PackageVersion=%GitVersion_NuGetVersion%
+  - ps: gitversion /l console /output buildserver
+
 build:
-  project: '%path_to_sln%'
   verbosity: minimal
-after_build:
-- cmd: msbuild %path_to_sln% /t:Pack /p:PackageVersion=%GitVersion_NuGetVersion%
+build_script:
+- cmd: dotnet restore %path_to_sln% /p:PackageVersion=%GitVersion_FullSemVer%
+- cmd: dotnet build %path_to_sln% -c Release /p:PackageVersion=%GitVersion_FullSemVer%
+- cmd: dotnet pack %path_to_sln% -c Release /p:PackageVersion=%GitVersion_FullSemVer%
+test_script:
+- cmd: dotnet test src/DotNet.Cabinet.Tests/DotNet.Cabinets.Tests.csproj
 artifacts:
 - path: /src/**/*.nupkg
 deploy:
