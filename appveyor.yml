@@ -17,11 +17,11 @@ build:
 build_script:
 - cmd: dotnet restore %path_to_sln% /p:PackageVersion=%GitVersion_FullSemVer%
 - cmd: dotnet build %path_to_sln% -c Release /p:PackageVersion=%GitVersion_FullSemVer%
-- cmd: dotnet pack %path_to_sln% -c Release /p:PackageVersion=%GitVersion_FullSemVer% --output ../../artifacts/
+- cmd: dotnet pack %path_to_sln% -c Release /p:PackageVersion=%GitVersion_FullSemVer%
 test_script:
 - cmd: dotnet test src/DotNet.Cabinet.Tests/DotNet.Cabinets.Tests.csproj
 artifacts:
-- path: ./artifacts/*
+- path: /src/**/*.nupkg
 deploy:
   provider: NuGet
   api_key:
